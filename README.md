@@ -63,6 +63,14 @@ The demo failure workflow is triggered only with `workflow_dispatch`, so it does
 
 Those failure logs are meant for the next stage of this project, where n8n orchestration and the AI CI/CD Failure Debugger will consume CI output and analyze what went wrong.
 
+## n8n Webhook Integration
+
+The demo failure workflow now sends a CI failure payload to n8n after the intentional failure occurs. This keeps the main CI path safe while giving the project a real failure event that can be forwarded into automation.
+
+The webhook URL is stored in the GitHub Actions secret `N8N_CICD_WEBHOOK_URL`, and the workflow sends a shared secret header using `N8N_WEBHOOK_SECRET` for basic protection. No webhook credentials are hardcoded in the repository.
+
+This prepares the next step of the project, where n8n can receive the failure event, fetch the related logs and run metadata, and pass that context into AI-based CI/CD failure analysis.
+
 ## Local setup
 
 1. Copy the example environment file:

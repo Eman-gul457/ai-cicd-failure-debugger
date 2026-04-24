@@ -37,6 +37,33 @@ jobs:
       - name: Simulate production build failure
         run: npm run build:production
 
+      - name: Notify n8n about CI failure
+        if: ${{ failure() }}
+        continue-on-error: true
+        env:
+          N8N_CICD_WEBHOOK_URL: ${{ secrets.N8N_CICD_WEBHOOK_URL }}
+          N8N_WEBHOOK_SECRET: ${{ secrets.N8N_WEBHOOK_SECRET }}
+        run: |
+          curl --silent --show-error --fail \
+            -X POST "$N8N_CICD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Webhook-Secret: $N8N_WEBHOOK_SECRET" \
+            --data-raw '{
+              "repository": "${{ github.repository }}",
+              "workflow": "${{ github.workflow }}",
+              "run_id": "${{ github.run_id }}",
+              "run_number": "${{ github.run_number }}",
+              "run_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+              "branch": "${{ github.ref_name }}",
+              "commit_sha": "${{ github.sha }}",
+              "actor": "${{ github.actor }}",
+              "event_name": "${{ github.event_name }}",
+              "status": "failure",
+              "failure_type": "missing_npm_script",
+              "failed_step": "Simulate production build failure",
+              "expected_error": "Missing npm script: build:production"
+            }'
+
       - name: Publish demo failure summary
         if: ${{ always() }}
         run: |
@@ -46,4 +73,5 @@ jobs:
             echo "- This workflow is intentionally designed to fail."
             echo "- The failure is used to test the AI CI/CD Failure Debugger."
             echo "- Expected failure: missing npm script \`build:production\`."
+            echo "- When the failure occurs, the workflow attempts to notify n8n with the CI failure payload."
           } >> "$GITHUB_STEP_SUMMARY"
