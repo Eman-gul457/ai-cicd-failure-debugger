@@ -1,0 +1,49 @@
+name: ReleaseGuard Demo Failure
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  demo-failure:
+    name: Intentional Failure Scenario
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Build application
+        run: npm run build
+
+      - name: Simulate production build failure
+        run: npm run build:production
+
+      - name: Publish demo failure summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## ReleaseGuard Demo Failure Summary"
+            echo
+            echo "- This workflow is intentionally designed to fail."
+            echo "- The failure is used to test the AI CI/CD Failure Debugger."
+            echo "- Expected failure: missing npm script \`build:production\`."
+          } >> "$GITHUB_STEP_SUMMARY"

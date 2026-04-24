@@ -55,6 +55,14 @@ The CI workflow checks:
 
 This is the first CI/CD layer for the AI CI/CD Failure Debugger project. In later steps, the pipeline results and logs will be connected to n8n orchestration and AI-powered CI failure analysis, but no n8n webhook or log-debugging automation is added yet.
 
+## Demo Failure Workflow
+
+The main CI workflow stays green and continues to protect the normal development flow. A separate manual-only workflow is available at `.github/workflows/demo-failure.yml` for safe failure simulation.
+
+The demo failure workflow is triggered only with `workflow_dispatch`, so it does not affect regular pushes or pull requests. It runs the same install, lint, test, and build steps as the normal pipeline, then intentionally fails on `npm run build:production` to create realistic GitHub Actions failure logs.
+
+Those failure logs are meant for the next stage of this project, where n8n orchestration and the AI CI/CD Failure Debugger will consume CI output and analyze what went wrong.
+
 ## Local setup
 
 1. Copy the example environment file:
