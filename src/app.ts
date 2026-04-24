@@ -6,6 +6,7 @@ import { logger } from './lib/logger';
 import { deploymentsRoutes } from './routes/deployments';
 import { healthRoutes } from './routes/health';
 import { readyRoutes } from './routes/ready';
+import { rootRoutes } from './routes/root';
 import { versionRoutes } from './routes/version';
 
 const isZodError = (error: unknown): error is ZodError => {
@@ -43,6 +44,7 @@ export const buildApp = () => {
     });
   });
 
+  app.register(rootRoutes);
   app.register(healthRoutes);
   app.register(readyRoutes);
   app.register(versionRoutes);

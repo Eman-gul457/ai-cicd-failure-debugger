@@ -18,6 +18,28 @@ describe('health endpoints', () => {
     await app.close();
   });
 
+  it('returns a service overview at the root route', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/',
+    });
+
+    expect(response.statusCode).toBe(200);
+
+    const payload = response.json();
+
+    expect(payload.name).toBe('releaseguard-api');
+    expect(payload.status).toBe('online');
+    expect(payload.environment).toBe('test');
+    expect(payload.endpoints).toMatchObject({
+      health: '/health',
+      ready: '/ready',
+      version: '/version',
+      deployments: '/deployments',
+      validateDeployment: '/deployments/validate',
+    });
+  });
+
   it('returns service health metadata', async () => {
     const response = await app.inject({
       method: 'GET',
