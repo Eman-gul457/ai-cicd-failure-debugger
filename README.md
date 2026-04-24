@@ -1,5 +1,7 @@
 # AI CI/CD Failure Debugger - ReleaseGuard API
 
+[![ReleaseGuard CI](https://github.com/Eman-gul457/ai-cicd-failure-debugger/actions/workflows/ci.yml/badge.svg)](https://github.com/Eman-gul457/ai-cicd-failure-debugger/actions/workflows/ci.yml)
+
 ReleaseGuard API is a production-style demo service for the **AI CI/CD Failure Debugger** portfolio project. It models the kind of backend component you would place in front of CI/CD workflows to expose deployment health, release metadata, and validation signals.
 
 ## Why this app exists
@@ -38,6 +40,20 @@ This service is designed to become the API surface for CI/CD observability and a
 - Docker multi-stage build
 - Docker Compose
 - ESLint + Prettier
+
+## CI/CD
+
+The project now includes a GitHub Actions pipeline defined in `.github/workflows/ci.yml`. On every push to `main`, every pull request targeting `main`, and every manual workflow dispatch, the pipeline runs the core quality gates for the ReleaseGuard API.
+
+The CI workflow checks:
+
+- dependency installation with `npm ci`
+- code quality with `npm run lint`
+- automated tests with `npm run test`
+- production build compilation with `npm run build`
+- container build verification with `docker build -t releaseguard-api:ci .`
+
+This is the first CI/CD layer for the AI CI/CD Failure Debugger project. In later steps, the pipeline results and logs will be connected to n8n orchestration and AI-powered CI failure analysis, but no n8n webhook or log-debugging automation is added yet.
 
 ## Local setup
 

@@ -1,0 +1,89 @@
+name: ReleaseGuard CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: releaseguard-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        id: lint
+        run: npm run lint
+
+      - name: Run tests
+        id: test
+        run: npm run test
+
+      - name: Build application
+        id: build
+        run: npm run build
+
+      - name: Build Docker image
+        id: docker
+        run: docker build -t releaseguard-api:ci .
+
+      - name: Publish job summary
+        if: ${{ always() }}
+        env:
+          LINT_OUTCOME: ${{ steps.lint.outcome }}
+          TEST_OUTCOME: ${{ steps.test.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          DOCKER_OUTCOME: ${{ steps.docker.outcome }}
+        run: |
+          status_line() {
+            local label="$1"
+            local outcome="$2"
+
+            if [ "$outcome" = "success" ]; then
+              echo "- $label passed"
+            elif [ "$outcome" = "skipped" ] || [ -z "$outcome" ]; then
+              echo "- $label skipped"
+            else
+              echo "- $label failed"
+            fi
+          }
+
+          {
+            echo "## ReleaseGuard CI Summary"
+            echo
+            status_line "lint" "$LINT_OUTCOME"
+            status_line "tests" "$TEST_OUTCOME"
+            status_line "build" "$BUILD_OUTCOME"
+
+            if [ "$DOCKER_OUTCOME" = "success" ]; then
+              echo "- Docker image built"
+            elif [ "$DOCKER_OUTCOME" = "skipped" ] || [ -z "$DOCKER_OUTCOME" ]; then
+              echo "- Docker image build skipped"
+            else
+              echo "- Docker image build failed"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
