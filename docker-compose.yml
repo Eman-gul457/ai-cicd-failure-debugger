@@ -1,0 +1,14 @@
+services:
+  releaseguard-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: releaseguard-api
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      SERVICE_NAME: releaseguard-api
+      LOG_LEVEL: info
+      GIT_SHA: local
