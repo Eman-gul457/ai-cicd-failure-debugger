@@ -26,3 +26,6 @@ out
 .serverless
 .firebase
 .vscode-test
+docs/screenshots/raw/
+private/
+*.secret.png

@@ -61,15 +61,31 @@ The main CI workflow stays green and continues to protect the normal development
 
 The demo failure workflow is triggered only with `workflow_dispatch`, so it does not affect regular pushes or pull requests. It runs the same install, lint, test, and build steps as the normal pipeline, then intentionally fails on `npm run build:production` to create realistic GitHub Actions failure logs.
 
-Those failure logs are meant for the next stage of this project, where n8n orchestration and the AI CI/CD Failure Debugger will consume CI output and analyze what went wrong.
+Those failure logs are meant for the next stage of this project, where n8n orchestration and the AI CI/CD Failure Debugger will consume CI output and analyze what went wrong. The n8n notification now runs in a second job after the failed job completes, which avoids GitHub log-download timing issues and makes the failed job logs available before n8n fetches them.
 
 ## n8n Webhook Integration
 
-The demo failure workflow now sends a CI failure payload to n8n after the intentional failure occurs. This keeps the main CI path safe while giving the project a real failure event that can be forwarded into automation.
+The demo failure workflow now sends a CI failure payload to n8n from a follow-up job after the intentional failure job has finished. This keeps the main CI path safe while giving the project a real failure event that can be forwarded into automation.
 
 The webhook URL is stored in the GitHub Actions secret `N8N_CICD_WEBHOOK_URL`, and the workflow sends a shared secret header using `N8N_WEBHOOK_SECRET` for basic protection. No webhook credentials are hardcoded in the repository.
 
-This prepares the next step of the project, where n8n can receive the failure event, fetch the related logs and run metadata, and pass that context into AI-based CI/CD failure analysis.
+This prepares the next step of the project, where n8n can receive the failure event, fetch the related logs and run metadata after the failed job is complete, and pass that context into AI-based CI/CD failure analysis.
+
+## How It Works
+
+This project uses GitHub Actions and n8n to automatically debug failed CI/CD runs.
+
+When a GitHub Actions workflow fails, it sends a webhook payload to n8n. The n8n workflow then fetches the failed job logs from the GitHub API, sends the important log lines to Gemini AI for root-cause analysis, and creates a GitHub issue with the failure summary and suggested fix.
+
+### Runtime Flow
+
+1. Developer pushes code or manually runs the demo failure workflow.
+2. GitHub Actions workflow fails.
+3. The demo workflow finishes the intentional failure job.
+4. A second GitHub Actions job sends failure metadata to the n8n production webhook.
+5. n8n fetches the failed job logs using the GitHub API.
+6. Gemini AI analyzes the logs.
+7. n8n creates a GitHub issue with the root cause, failed step, suggested fix, and confidence level.
 
 ## Local setup
 

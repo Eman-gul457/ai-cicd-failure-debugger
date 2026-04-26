@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 jobs:
-  demo-failure:
+  intentional-failure-scenario:
     name: Intentional Failure Scenario
     runs-on: ubuntu-latest
 
@@ -37,8 +37,26 @@ jobs:
       - name: Simulate production build failure
         run: npm run build:production
 
+      - name: Publish demo failure summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## ReleaseGuard Demo Failure Summary"
+            echo
+            echo "- This workflow is intentionally designed to fail."
+            echo "- The failure is used to test the AI CI/CD Failure Debugger."
+            echo "- Expected failure: missing npm script \`build:production\`."
+            echo "- n8n notification is sent in a separate follow-up job after this failed job completes."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  notify-n8n:
+    name: Notify n8n
+    runs-on: ubuntu-latest
+    needs: intentional-failure-scenario
+    if: ${{ always() && needs.intentional-failure-scenario.result == 'failure' }}
+
+    steps:
       - name: Notify n8n about CI failure
-        if: ${{ failure() }}
         continue-on-error: true
         env:
           N8N_CICD_WEBHOOK_URL: ${{ secrets.N8N_CICD_WEBHOOK_URL }}
@@ -63,15 +81,3 @@ jobs:
               "failed_step": "Simulate production build failure",
               "expected_error": "Missing npm script: build:production"
             }'
-
-      - name: Publish demo failure summary
-        if: ${{ always() }}
-        run: |
-          {
-            echo "## ReleaseGuard Demo Failure Summary"
-            echo
-            echo "- This workflow is intentionally designed to fail."
-            echo "- The failure is used to test the AI CI/CD Failure Debugger."
-            echo "- Expected failure: missing npm script \`build:production\`."
-            echo "- When the failure occurs, the workflow attempts to notify n8n with the CI failure payload."
-          } >> "$GITHUB_STEP_SUMMARY"
